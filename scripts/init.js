@@ -1,3 +1,7 @@
+// It kinda breaks everything on changing fo hex tiles. 
+// Shoud fix it
+
+
 function patch() {
   const FALLBACK_TEXT_STYLE = {
     fontFamily: 'Arial',
@@ -5,25 +9,37 @@ function patch() {
     fill: 0xff1010,
     align: 'center',
   }
-  
+
+
+  const usePrefix = (name) => `__GRID_NUMBERS_MODULE__${name}`;
+  const PROP = {
+    showNumbers: usePrefix('showNumbers'),
+    numbersGridContainer: usePrefix('numbersGridContainer'),
+    setShowNumbers: usePrefix('setShowNumbers'),
+    showNumbers: usePrefix('showNumbers'),
+    toggleShowNumbers: usePrefix('toggleShowNumbers'),
+    setShowNumbers: usePrefix('setShowNumbers'),
+    showNumbers: usePrefix('showNumbers'),
+    getGridNumbersContainer: usePrefix('getGridNumbersContainer'),
+    showNumbers: usePrefix('showNumbers'),
+    numbersGridContainer: usePrefix('numbersGridContainer'),
+    numbersGridContainer: usePrefix('numbersGridContainer'),
+    getGridNumbersContainer: usePrefix('getGridNumbersContainer'),
+  }
   // Agressive monkey patching
+
   GridLayer.prototype._draw = GridLayer.prototype.draw;
-  GridLayer.prototype.__GRID_NUMBERS_MODULE__showNumbers = true;
-  GridLayer.prototype.__GRID_NUMBERS_MODULE__setShowNumbers = function (status) {
-    this.__GRID_NUMBERS_MODULE__showNumbers = status;
+  GridLayer.prototype[PROP.showNumbers] = true;
+  GridLayer.prototype[PROP.numbersGridContainer] = null;
+  GridLayer.prototype[PROP.setShowNumbers] = function (status) {
+    this[PROP.showNumbers] = status;
     this.draw();
   }
-  GridLayer.prototype.__GRID_NUMBERS_MODULE__toggleShowNumbers = function () {
-    this.__GRID_NUMBERS_MODULE__setShowNumbers(!this.__GRID_NUMBERS_MODULE__showNumbers)
+  GridLayer.prototype[PROP.toggleShowNumbers] = function () {
+    this[PROP.setShowNumbers](!this[PROP.showNumbers])
   }
   
-  GridLayer.prototype.draw = async function () {
-    await this._draw();
-    if (!this.grid) {
-      console.warn(`MODULE: GRID-NUMBERS: No grid yet Can't draw numbers`);
-      return;
-    };
-    if (!this.__GRID_NUMBERS_MODULE__showNumbers) return;
+  GridLayer.prototype[PROP.getGridNumbersContainer] = function() {
     const textContainer = new PIXI.Container({ name: "grid-numbers" });
     const { size, width, height } = this.grid.options.dimensions;
     const textStyle = CONFIG?.canvasTextStyle ?? FALLBACK_TEXT_STYLE;
@@ -40,13 +56,26 @@ function patch() {
         textContainer.addChild(text)
       }
     }
+    return textContainer;
+  }
+
+  GridLayer.prototype.draw = async function () {
+    await this._draw();
+    if (!this[PROP.showNumbers]) return this;
+    if(this[PROP.numbersGridContainer]) {
+      this.addChild(this[PROP.numbersGridContainer]);
+      return this;
+    }
+
+    const textContainer = this[PROP.getGridNumbersContainer]();
     this.addChild(textContainer);
     Hooks.once('canvasReady', () => {
       requestAnimationFrame(() => {
         textContainer.cacheAsBitmap = true;
       })
     })
-  
+    this[PROP.numbersGridContainer] = textContainer;
+    return this;
   }
 }
 
