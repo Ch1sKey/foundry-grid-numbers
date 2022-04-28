@@ -3,7 +3,7 @@
     "title": "Grid numbers – attach numbers to your grid cells.",
     "description": "A simple module to show decorative numbers for grid cells.",
     "author": "Chiskey",
-    "version": "0.0.1",
+    "version": "1.0.0",
     "minimumCoreVersion": "9",
     "scripts": ["scripts/init.js"]
   }
