@@ -1,47 +1,65 @@
-// TODO: Fix with hex
-// TODO: Fix cache on options change
-
-const usePrefix = (name) => `__GRID_NUMBERS_MODULE__${name}`;
-const PROP = {
-  showNumbers: usePrefix('showNumbers'),
-  numbersGridContainer: usePrefix('numbersGridContainer'),
-  setShowNumbers: usePrefix('setShowNumbers'),
-  showNumbers: usePrefix('showNumbers'),
-  toggleShowNumbers: usePrefix('toggleShowNumbers'),
-  setShowNumbers: usePrefix('setShowNumbers'),
-  showNumbers: usePrefix('showNumbers'),
-  getGridNumbersContainer: usePrefix('getGridNumbersContainer'),
-  showNumbers: usePrefix('showNumbers'),
-  numbersGridContainer: usePrefix('numbersGridContainer'),
-  numbersGridContainer: usePrefix('numbersGridContainer'),
-  getGridNumbersContainer: usePrefix('getGridNumbersContainer'),
+function isV9OrLater() {
+  return game.release?.generation ?? 0 >= 9;
 }
 
-function patch() {
-  const FALLBACK_TEXT_STYLE = {
-    fontFamily: 'Arial',
-    fontSize: 9,
-    fill: 0xff1010,
-    align: 'center',
+
+class GridNumbersLayer extends CanvasLayer {
+
+  constructor() {
+    super();
+    this.showNumbers = false;
+    this.numbersGridContainer = null;
+
+    console.log('DEBUG: CTRCTUR')
+    Hooks.on('updateScene', () => {
+      console.log("DEBUG:", null)
+      this.numbersGridContainer = null;
+    })
   }
 
+  /**
+   * Weather to show numbers
+   * @type {boolean}
+  */
+  showNumbers;
 
-  // Agressive monkey patching
+  /**
+   * Cached container with numbers
+   * @type {PIXI.Container}
+  */
+  numbersGridContainer;
 
-  GridLayer.prototype._draw = GridLayer.prototype.draw;
-  GridLayer.prototype[PROP.showNumbers] = true;
-  GridLayer.prototype[PROP.numbersGridContainer] = null;
-  GridLayer.prototype[PROP.setShowNumbers] = function (status) {
-    this[PROP.showNumbers] = status;
-    this.draw();
+  /**
+   * Cached container with numbers
+   * @return {GridLayer}
+  */  
+  getGridLayer() {
+    return canvas.grid;
   }
-  GridLayer.prototype[PROP.toggleShowNumbers] = function () {
-    this[PROP.setShowNumbers](!this[PROP.showNumbers])
-  }
 
-  GridLayer.prototype[PROP.getGridNumbersContainer] = function () {
+  /**
+   * Get container with drawn numbers
+   * @return {PIXI.Container}
+  */
+  getGridNumbersContainer() {
     const textContainer = new PIXI.Container({ name: "grid-numbers" });
-    // Hext types refs https://www.redblobgames.com/grids/hexagons/#coordinates-offset
+    const gridLayer = this.getGridLayer();
+
+    // Nothing to draw if there is no grid layer.
+    if(!gridLayer) return;
+
+    const gridType = gridLayer.type;
+    const isGridless = gridLayer.grid.isGridless;
+    if (isGridless) return textContainer;
+    const isHexGrid = gridLayer.isHex;
+    /*
+      There are even and odd lines in hex grid.
+      Added size of even and odd lines combined is 1 + 0.5 = 1.5
+      Then size of one row is 1.5 / 2
+      More info here https://redblobgames.com/grids/hexagons/#size-and-spacing
+    */
+    const HEX_ROW_SIZE_MULTIPLIER  = 1.5 / 2;
+
     /* Grid types list
       0: "SCENES.GridGridless"
       1: "SCENES.GridSquare"
@@ -50,86 +68,105 @@ function patch() {
       4: "SCENES.GridHexOddQ"
       5: "SCENES.GridHexEvenQ"
     */
-    const gridType = this.type;
-    const isGridless = this.grid.isGridless;
-    if (isGridless) return textContainer;
-    const isHexGrid = this.isHex;
+    /* Hex grid types refs https://www.redblobgames.com/grids/hexagons/#coordinates-offset */
     const isHorizontalHex = isHexGrid && [2, 3].includes(gridType);
     const isVerticalHex = isHexGrid && [4, 5].includes(gridType);;
 
-    const { size, width, height } = this.grid.options.dimensions;
-    const cellW = this.grid.w;
-    const cellH = this.grid.h; 
-    const rowHeight = isHorizontalHex ? 1.5 * cellH / 2 : cellH;
-    const colWidth =  isVerticalHex ? 1.5 * cellW / 2 : cellW;
-    const textStyle = CONFIG?.canvasTextStyle ?? FALLBACK_TEXT_STYLE;
-    textStyle.fontSize = size / 4;
+    const { size, width, height } = gridLayer.grid.options.dimensions;
+    const cellW = gridLayer.grid.w;
+    const cellH = gridLayer.grid.h;
+    const rowHeight = isHorizontalHex ? cellH * HEX_ROW_SIZE_MULTIPLIER : cellH;
+    const colWidth = isVerticalHex ? cellW * HEX_ROW_SIZE_MULTIPLIER : cellW;
     const rows = Math.ceil(height / rowHeight);
     const cols = Math.ceil(width / colWidth);
 
     const getTextWithCoords = (row, col) => {
       const orderNumber = String(cols * row + col + 1);
-      const text = new PIXI.Text(orderNumber, textStyle);
-      const [xP, yP] = this.grid.getPixelsFromGridPosition(row, col);
+      const text = new PIXI.BitmapText(orderNumber, { fontName: 'GridNumbersFont', fontSize: size / 4 });
+      const [xP, yP] = gridLayer.grid.getPixelsFromGridPosition(row, col);
       text.x = xP;
       text.y = yP;
       return text;
     }
 
     const addHexCell = (row, col) => {
-      const text = getTextWithCoords(row,col);
+      const text = getTextWithCoords(row, col);
       text.x += cellW / 2 - text.width / 2;
       text.y += cellH / 2 - text.height / 2 - cellH / 4;
       textContainer.addChild(text);
     }
 
     const addSquareCell = (row, col) => {
-      const text = getTextWithCoords(row,col);
-      text.x += size - text.width; 
+      const text = getTextWithCoords(row, col);
+      text.x += size - text.width;
       textContainer.addChild(text)
     }
 
     for (let col = 0; col <= cols; col++) {
       for (let row = 0; row <= rows; row++) {
-        isHexGrid ? addHexCell(row,col) : addSquareCell(row,col)
+        isHexGrid ? addHexCell(row, col) : addSquareCell(row, col)
       }
     }
     return textContainer;
   }
 
-  GridLayer.prototype.draw = async function () {
-    await this._draw();
-    if (!this[PROP.showNumbers]) return this;
-    if (this[PROP.numbersGridContainer]) {
-      this.addChild(this[PROP.numbersGridContainer]);
-      return this;
+  setShowNumbers(status) {
+    this.showNumbers = status;
+    this.draw();
+  }
+
+  toggleShowNumbers() {
+    this.setShowNumbers(!this.showNumbers)
+  }
+
+/** @override */
+  async draw() {
+    await super.draw();
+    if(!this.numbersGridContainer) {
+      this.numbersGridContainer = this.getGridNumbersContainer();
     }
-    const textContainer = this[PROP.getGridNumbersContainer]();
-    this.addChild(textContainer);
-    Hooks.once('canvasReady', () => {
-      requestAnimationFrame(() => {
-        textContainer.cacheAsBitmap = true;
-      })
-    })
-    this[PROP.numbersGridContainer] = textContainer;
+    if (!this.showNumbers) return this;
+    
+    this.addChild(this.numbersGridContainer);
+
+    // requestAnimationFrame(() => {
+    //   this.numbersGridContainer.cacheAsBitmap = true;
+    // })
+
+    console.log('DEBUG: this')
     return this;
+  }
+
+  /** @override */
+  async tearDown() {
+    await super.tearDown();
+    this.numbersGridContainer = null;
+    return this;
+  }
+
+  /**
+   * Layer options
+   * @type {CanvasLayerOptions}
+  */
+  static get layerOptions() {
+    return {
+      name: "GridNumbersLayer",
+      zIndex: 0,
+      sortActiveTop: false
+    }
   }
 }
 
-Hooks.on('ready', function () {
-  const gridTypes = SceneConfig._getGridTypes();
-  const currentGridType = gridTypes[canvas.grid.type];
-  console.log(gridTypes, currentGridType)
-})
-
 Hooks.on("init", function () {
-  patch();
+  PIXI.BitmapFont.from("GridNumbersFont", {...CONFIG.canvasTextStyle, fontFamily: 'Arial'}, { chars: PIXI.BitmapFont.NUMERIC });
+  CONFIG.Canvas.layers.gridNumbers = isV9OrLater() ? { layerClass: GridNumbersLayer, group: "primary" } : GridNumbersLayer;
   game.keybindings.register("grid-numbers", "showGridNumbers", {
     name: "Toggle grid numbers",
     hint: "Shows a number of each cell on a grid",
     editable: [{ key: "KeyN" }],
     onDown: () => {
-      canvas.grid[PROP.toggleShowNumbers]?.()
+      const gridCanvasLayer = canvas.layers.find((layer) => layer.name === "GridNumbersLayer")
+      gridCanvasLayer.toggleShowNumbers();
     },
     restricted: false,
     precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL
