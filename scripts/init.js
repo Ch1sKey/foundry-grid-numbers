@@ -10,9 +10,7 @@ class GridNumbersLayer extends CanvasLayer {
     this.showNumbers = false;
     this.numbersGridContainer = null;
 
-    console.log('DEBUG: CTRCTUR')
     Hooks.on('updateScene', () => {
-      console.log("DEBUG:", null)
       this.numbersGridContainer = null;
     })
   }
@@ -32,7 +30,7 @@ class GridNumbersLayer extends CanvasLayer {
   /**
    * Cached container with numbers
    * @return {GridLayer}
-  */  
+  */
   getGridLayer() {
     return canvas.grid;
   }
@@ -46,7 +44,7 @@ class GridNumbersLayer extends CanvasLayer {
     const gridLayer = this.getGridLayer();
 
     // Nothing to draw if there is no grid layer.
-    if(!gridLayer) return;
+    if (!gridLayer) return;
 
     const gridType = gridLayer.type;
     const isGridless = gridLayer.grid.isGridless;
@@ -58,7 +56,7 @@ class GridNumbersLayer extends CanvasLayer {
       Then size of one row is 1.5 / 2
       More info here https://redblobgames.com/grids/hexagons/#size-and-spacing
     */
-    const HEX_ROW_SIZE_MULTIPLIER  = 1.5 / 2;
+    const HEX_ROW_SIZE_MULTIPLIER = 1.5 / 2;
 
     /* Grid types list
       0: "SCENES.GridGridless"
@@ -119,21 +117,14 @@ class GridNumbersLayer extends CanvasLayer {
     this.setShowNumbers(!this.showNumbers)
   }
 
-/** @override */
+  /** @override */
   async draw() {
     await super.draw();
-    if(!this.numbersGridContainer) {
+    if (!this.numbersGridContainer) {
       this.numbersGridContainer = this.getGridNumbersContainer();
     }
     if (!this.showNumbers) return this;
-    
     this.addChild(this.numbersGridContainer);
-
-    // requestAnimationFrame(() => {
-    //   this.numbersGridContainer.cacheAsBitmap = true;
-    // })
-
-    console.log('DEBUG: this')
     return this;
   }
 
@@ -158,7 +149,7 @@ class GridNumbersLayer extends CanvasLayer {
 }
 
 Hooks.on("init", function () {
-  PIXI.BitmapFont.from("GridNumbersFont", {...CONFIG.canvasTextStyle, fontFamily: 'Arial'}, { chars: PIXI.BitmapFont.NUMERIC });
+  PIXI.BitmapFont.from("GridNumbersFont", { ...CONFIG.canvasTextStyle, fontFamily: 'Arial' }, { chars: PIXI.BitmapFont.NUMERIC });
   CONFIG.Canvas.layers.gridNumbers = isV9OrLater() ? { layerClass: GridNumbersLayer, group: "primary" } : GridNumbersLayer;
   game.keybindings.register("grid-numbers", "showGridNumbers", {
     name: "Toggle grid numbers",
