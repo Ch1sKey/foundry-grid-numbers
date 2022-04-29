@@ -142,7 +142,7 @@ class GridNumbersLayer extends CanvasLayer {
   static get layerOptions() {
     return {
       name: "GridNumbersLayer",
-      zIndex: 0,
+      zIndex: 1001,
       sortActiveTop: false
     }
   }
