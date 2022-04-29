@@ -3,10 +3,10 @@
     "title": "Grid numbers – attach numbers to your grid cells.",
     "description": "A simple module to show decorative numbers for grid cells.",
     "author": "Chiskey",
-    "version": "1.0.1",
+    "version": "1.0.3",
     "minimumCoreVersion": "0.8.6",
     "compatibleCoreVersion": "9",
     "manifest": "https://github.com/Ch1sKey/foundry-grid-numbers/releases/latest/download/module.json",
-    "download": "https://github.com/Ch1sKey/foundry-grid-numbers/archive/refs/tags/v1.0.1.zip",
+    "download": "https://github.com/Ch1sKey/foundry-grid-numbers/archive/refs/tags/v1.0.3.zip",
     "scripts": ["scripts/init.js"]
   }
