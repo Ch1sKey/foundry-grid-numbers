@@ -44,11 +44,9 @@ class GridNumbersLayer extends CanvasLayer {
     const gridLayer = this.getGridLayer();
 
     // Nothing to draw if there is no grid layer.
-    if (!gridLayer) return;
+    if (!gridLayer?.grid) return;
 
     const gridType = gridLayer.type;
-    const isGridless = gridLayer.grid.isGridless;
-    if (isGridless) return textContainer;
     const isHexGrid = gridLayer.isHex;
     /*
       There are even and odd lines in hex grid.
@@ -110,28 +108,58 @@ class GridNumbersLayer extends CanvasLayer {
 
   setShowNumbers(status) {
     this.showNumbers = status;
-    this.draw();
+    this._draw();
   }
 
   toggleShowNumbers() {
     this.setShowNumbers(!this.showNumbers)
   }
 
+  addGrid() {
+    this.addChild(this.numbersGridContainer)
+  }
+  removeGrid() {
+    this.removeChild(this.numbersGridContainer)
+  }
+
+  draw() {
+    return this._draw();
+  }
+
   /** @override */
-  async draw() {
-    await super.draw();
-    if (!this.numbersGridContainer) {
-      this.numbersGridContainer = this.getGridNumbersContainer();
+  async _draw() {
+    if(!this.showNumbers) {
+      if(this.numbersGridContainer) {
+        this.removeGrid();
+      }
     }
-    if (!this.showNumbers) return this;
-    this.addChild(this.numbersGridContainer);
+    if(this.showNumbers) {
+      if(this.numbersGridContainer) {
+        this.removeGrid();
+        this.addGrid();
+      } else {
+        this.numbersGridContainer = this.getGridNumbersContainer();
+        this.addGrid();
+      }
+    }
     return this;
+  
   }
 
   /** @override */
   async tearDown() {
     await super.tearDown();
     this.numbersGridContainer = null;
+    /**
+    * FIXME:
+    * Now we have a problem where GridNumbers layer can't
+    * automatically update after changing grind settings or any other tearDown
+    * beauce it doesn't know the Grid's properties in drawing time. 
+    * So we handle this by disabling the grid after each grid change. 
+    * This shold not happen frequently so its fine for now. 
+    * But should be fixed in future
+    **/
+    this.showNumbers = false;
     return this;
   }
 
@@ -140,11 +168,11 @@ class GridNumbersLayer extends CanvasLayer {
    * @type {CanvasLayerOptions}
   */
   static get layerOptions() {
-    return {
-      name: "GridNumbersLayer",
+    return foundry.utils.mergeObject(super.layerOptions, {
+      name: 'GridNumbers',
       zIndex: 1001,
       sortActiveTop: false
-    }
+    });
   }
 }
 
