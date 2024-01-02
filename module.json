@@ -1,21 +1,20 @@
 {
-  "title": "Grid numbers – attach numbers to your grid cells.",
-  "description": "A simple module to show decorative numbers for grid cells.",
+  "title": "Grid numbers",
+  "id": "grid-numbers",
+  "description": "A simple module to attach numbers to your grid cells. \n Allow much simplier navigation and communication with your teammates",
   "authors": [
     {
-      "name": "Chiskey",
-      "flags": {}
+      "name": "Chiskey"
     }
   ],
-  "version": "1.1.3",
-  "scripts": [
+  "esmodules": [
     "scripts/init.js"
   ],
-  "manifest": "https://github.com/Ch1sKey/foundry-grid-numbers/releases/tag/v1.1.3",
-  "download": "https://github.com/Ch1sKey/foundry-grid-numbers/archive/refs/tags/v1.1.3.zip",
-  "id": "grid-numbers",
+  "manifest": "https://github.com/Ch1sKey/foundry-grid-numbers/releases/tag/v1.1.4/module.json",
+  "download": "https://github.com/Ch1sKey/foundry-grid-numbers/archive/refs/tags/v1.1.4.zip",
+  "version": "1.1.4",
   "compatibility": {
     "minimum": "10",
-    "verified": "10"
+    "verified": "11"
   }
 }
